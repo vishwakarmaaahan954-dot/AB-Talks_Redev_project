@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Terminal,
   Github,
@@ -11,8 +11,13 @@ import {
   EyeOff,
   CheckCircle2,
   Shield,
+  KeyRound,
+  Sparkles,
 } from "lucide-react";
 import { AmbientBackdrop } from "@/components/ambient-backdrop";
+import { useAuth } from "@/hooks/use-auth";
+import { OAuthProvider } from "@/lib/oauth-config";
+import { OAuthModal } from "@/components/oauth-modal";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -21,7 +26,7 @@ export const Route = createFileRoute("/login")({
       {
         name: "description",
         content:
-          "Log in or create your builder profile to start your 60-day public coding challenge.",
+          "Log in with GitHub or Google OAuth to start your 60-day public coding challenge.",
       },
     ],
   }),
@@ -30,6 +35,8 @@ export const Route = createFileRoute("/login")({
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const { loginWithOAuth, loginWithEmail, registerWithEmail, isConfigured } = useAuth();
+
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -37,50 +44,57 @@ export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [authError, setAuthError] = useState("");
 
-  const handleAuth = (e: React.FormEvent) => {
+  // OAuth Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [activeProvider, setActiveProvider] = useState<OAuthProvider>("github");
+
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAuthError("");
     setLoading(true);
-    setTimeout(() => {
-      const userData = {
-        name: name.trim() || email.split("@")[0] || "Builder",
-        email: email || "builder@abtalks.dev",
-        loggedIn: true,
-        joinedAt: new Date().toISOString(),
-        currentDay: 1,
-        streak: 0,
-        isFirstTime: true,
-      };
-      localStorage.setItem("abtalks_user", JSON.stringify(userData));
-      window.dispatchEvent(new Event("abtalks_auth_change"));
+
+    try {
+      if (mode === "login") {
+        await loginWithEmail(email, password);
+      } else {
+        await registerWithEmail(name, email, password);
+      }
       setLoading(false);
       setSuccess(true);
       setTimeout(() => {
         navigate({ to: "/dashboard" });
       }, 600);
-    }, 800);
+    } catch (err: unknown) {
+      setLoading(false);
+      const msg = err instanceof Error ? err.message : "Authentication failed";
+      setAuthError(msg);
+    }
   };
 
-  const handleSocialAuth = (provider: "github" | "google") => {
-    setLoading(true);
-    setTimeout(() => {
-      const userData = {
-        name: provider === "github" ? "GitHub Builder" : "Google Builder",
-        email: `builder@${provider}.com`,
-        loggedIn: true,
-        joinedAt: new Date().toISOString(),
-        currentDay: 1,
-        streak: 0,
-        isFirstTime: true,
-      };
-      localStorage.setItem("abtalks_user", JSON.stringify(userData));
-      window.dispatchEvent(new Event("abtalks_auth_change"));
-      setLoading(false);
-      setSuccess(true);
-      setTimeout(() => {
-        navigate({ to: "/dashboard" });
-      }, 600);
-    }, 700);
+  const handleSocialAuth = async (provider: OAuthProvider) => {
+    setAuthError("");
+    setActiveProvider(provider);
+
+    // If client ID is configured in environment, launch live flow immediately
+    if (isConfigured(provider)) {
+      setLoading(true);
+      try {
+        await loginWithOAuth(provider);
+      } catch (err) {
+        setLoading(false);
+        setAuthError("Failed to initiate OAuth redirection.");
+      }
+    } else {
+      // Open interactive OAuth consent & setup modal
+      setModalOpen(true);
+    }
+  };
+
+  const openConfigModal = (provider: OAuthProvider) => {
+    setActiveProvider(provider);
+    setModalOpen(true);
   };
 
   return (
@@ -122,7 +136,7 @@ export function LoginPage() {
             </h1>
             <p className="mt-2 text-xs text-muted-foreground sm:text-sm">
               {mode === "login"
-                ? "Enter your details to access your daily streak and proof."
+                ? "Enter your details or continue with OAuth to access your streak."
                 : "Build daily, share your work, and prove your skills to top teams."}
             </p>
           </div>
@@ -131,7 +145,10 @@ export function LoginPage() {
           <div className="mt-6 grid grid-cols-2 rounded-xl bg-secondary/60 p-1">
             <button
               type="button"
-              onClick={() => setMode("login")}
+              onClick={() => {
+                setMode("login");
+                setAuthError("");
+              }}
               className={`rounded-lg py-2 text-xs font-bold transition-all ${
                 mode === "login"
                   ? "bg-background text-foreground shadow-sm"
@@ -142,7 +159,10 @@ export function LoginPage() {
             </button>
             <button
               type="button"
-              onClick={() => setMode("register")}
+              onClick={() => {
+                setMode("register");
+                setAuthError("");
+              }}
               className={`rounded-lg py-2 text-xs font-bold transition-all ${
                 mode === "register"
                   ? "bg-background text-foreground shadow-sm"
@@ -152,6 +172,13 @@ export function LoginPage() {
               Create Account
             </button>
           </div>
+
+          {/* Error Message */}
+          {authError && (
+            <div className="mt-4 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+              {authError}
+            </div>
+          )}
 
           {/* Auth Form */}
           <form onSubmit={handleAuth} className="mt-6 space-y-4">
@@ -249,7 +276,7 @@ export function LoginPage() {
           <div className="my-6 flex items-center gap-3">
             <div className="h-px flex-1 bg-border/80" />
             <span className="text-[11px] font-extrabold text-muted-foreground uppercase tracking-wider">
-              Or continue with
+              Or continue with OAuth 2.0
             </span>
             <div className="h-px flex-1 bg-border/80" />
           </div>
@@ -259,17 +286,24 @@ export function LoginPage() {
             <button
               type="button"
               onClick={() => handleSocialAuth("github")}
-              className="flex items-center justify-center gap-2.5 rounded-xl liquid-glass-btn-secondary py-3 text-xs font-extrabold transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="group relative flex items-center justify-center gap-2.5 rounded-xl liquid-glass-btn-secondary py-3 text-xs font-extrabold transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
-              <Github className="h-4 w-4 text-foreground" />
+              <Github className="h-4 w-4 text-foreground transition-transform group-hover:scale-110" />
               GitHub
+              {isConfigured("github") && (
+                <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                </span>
+              )}
             </button>
+
             <button
               type="button"
               onClick={() => handleSocialAuth("google")}
-              className="flex items-center justify-center gap-2.5 rounded-xl liquid-glass-btn-secondary py-3 text-xs font-extrabold transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="group relative flex items-center justify-center gap-2.5 rounded-xl liquid-glass-btn-secondary py-3 text-xs font-extrabold transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
-              <svg className="h-4 w-4" viewBox="0 0 24 24">
+              <svg className="h-4 w-4 transition-transform group-hover:scale-110" viewBox="0 0 24 24">
                 <path
                   fill="currentColor"
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -288,7 +322,29 @@ export function LoginPage() {
                 />
               </svg>
               Google
+              {isConfigured("google") && (
+                <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                </span>
+              )}
             </button>
+          </div>
+
+          {/* OAuth Status & Setup Info Banner */}
+          <div className="mt-5 rounded-2xl border border-border/80 bg-surface/60 p-3">
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="flex items-center gap-1.5 text-muted-foreground font-semibold">
+                <KeyRound className="h-3.5 w-3.5 text-primary" /> OAuth 2.0 PKCE Protected
+              </span>
+              <button
+                type="button"
+                onClick={() => openConfigModal("github")}
+                className="flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
+              >
+                <Sparkles className="h-3 w-3" /> Setup & Preview
+              </button>
+            </div>
           </div>
         </div>
       </main>
@@ -297,6 +353,16 @@ export function LoginPage() {
       <footer className="mx-auto text-center text-xs text-muted-foreground">
         <p>© {new Date().getFullYear()} ABTalks. Build in public every day.</p>
       </footer>
+
+      {/* OAuth Setup & Consent Modal */}
+      <OAuthModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        selectedProvider={activeProvider}
+        onSuccess={() => {
+          navigate({ to: "/dashboard" });
+        }}
+      />
     </div>
   );
 }

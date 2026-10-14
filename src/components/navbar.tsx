@@ -11,8 +11,11 @@ import {
   Flame,
   ChevronDown,
   Sparkles,
+  Github,
+  ShieldCheck,
 } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
+import { useAuth } from "@/hooks/use-auth";
 
 const navLinks = [
   { label: "Dashboard", to: "/dashboard" },
@@ -27,49 +30,9 @@ export function Navbar() {
   const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userProfile, setUserProfile] = useState<{
-    name: string;
-    email: string;
-    streak: number;
-    currentDay: number;
-  } | null>(null);
+  const { user, isAuthenticated, logout } = useAuth();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-
-  const checkAuth = () => {
-    try {
-      const stored = localStorage.getItem("abtalks_user");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed && parsed.loggedIn) {
-          setIsLoggedIn(true);
-          setUserProfile({
-            name: parsed.name || "Builder",
-            email: parsed.email || "builder@abtalks.dev",
-            streak: typeof parsed.streak === "number" ? parsed.streak : 0,
-            currentDay: parsed.currentDay || 1,
-          });
-          return;
-        }
-      }
-      setIsLoggedIn(false);
-      setUserProfile(null);
-    } catch {
-      setIsLoggedIn(false);
-      setUserProfile(null);
-    }
-  };
-
-  useEffect(() => {
-    checkAuth();
-    window.addEventListener("abtalks_auth_change", checkAuth);
-    window.addEventListener("storage", checkAuth);
-    return () => {
-      window.removeEventListener("abtalks_auth_change", checkAuth);
-      window.removeEventListener("storage", checkAuth);
-    };
-  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -97,8 +60,7 @@ export function Navbar() {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("abtalks_user");
-    window.dispatchEvent(new Event("abtalks_auth_change"));
+    logout();
     setUserMenuOpen(false);
     navigate({ to: "/" });
   };
@@ -168,7 +130,7 @@ export function Navbar() {
           <div className="flex shrink-0 items-center gap-3">
             <ThemeToggle />
 
-            {isLoggedIn && userProfile ? (
+            {isAuthenticated && user ? (
               /* Logged In Profile Menu Trigger */
               <div className="relative" ref={menuRef}>
                 <button
@@ -178,13 +140,21 @@ export function Navbar() {
                   aria-expanded={userMenuOpen}
                   aria-label="User profile menu"
                 >
-                  <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary via-primary to-primary-soft font-bold text-primary-foreground shadow-md transition-transform duration-300 group-hover:scale-105">
-                    {getInitials(userProfile.name)}
+                  <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary via-primary to-primary-soft font-bold text-primary-foreground shadow-md transition-transform duration-300 group-hover:scale-105 overflow-hidden">
+                    {user.avatarUrl ? (
+                      <img
+                        src={user.avatarUrl}
+                        alt={user.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      getInitials(user.name)
+                    )}
                     <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-background bg-emerald-400 shadow-sm" />
                     <span className="absolute bottom-0 right-0 h-2.5 w-2.5 animate-ping rounded-full bg-emerald-400/70" />
                   </span>
                   <span className="hidden max-w-[110px] truncate text-xs font-extrabold tracking-wide sm:inline-block">
-                    {userProfile.name.split(" ")[0]}
+                    {user.name.split(" ")[0]}
                   </span>
                   <ChevronDown
                     className={`h-3.5 w-3.5 text-muted-foreground transition-transform duration-300 ${
@@ -209,17 +179,40 @@ export function Navbar() {
                     {/* Neomorphic User Header Card */}
                     <div className="relative neo-inset overflow-hidden rounded-2xl border border-primary/30 bg-surface/90 p-3.5 backdrop-blur-xl">
                       <div className="flex items-center gap-3">
-                        <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary via-primary to-primary-soft text-sm font-black text-primary-foreground shadow-[0_4px_14px_rgba(0,0,0,0.5)] ring-2 ring-primary/40">
-                          {getInitials(userProfile.name)}
+                        <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary via-primary to-primary-soft text-sm font-black text-primary-foreground shadow-[0_4px_14px_rgba(0,0,0,0.5)] ring-2 ring-primary/40 overflow-hidden">
+                          {user.avatarUrl ? (
+                            <img
+                              src={user.avatarUrl}
+                              alt={user.name}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            getInitials(user.name)
+                          )}
                           <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background bg-emerald-400" />
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-extrabold text-foreground">
-                            {userProfile.name}
+                            {user.name}
                           </p>
                           <p className="truncate text-[11px] font-semibold text-muted-foreground">
-                            {userProfile.email}
+                            {user.email}
                           </p>
+                          {user.provider && user.provider !== "email" && (
+                            <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[9px] font-bold text-primary">
+                              {user.provider === "github" ? (
+                                <Github className="h-2.5 w-2.5" />
+                              ) : (
+                                <ShieldCheck className="h-2.5 w-2.5" />
+                              )}
+                              {user.provider === "github"
+                                ? user.githubUsername
+                                  ? `@${user.githubUsername}`
+                                  : "GitHub"
+                                : "Google"}{" "}
+                              OAuth
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -229,8 +222,8 @@ export function Navbar() {
                         </span>
                         <span className="flex items-center gap-1.5 text-[11px] font-extrabold text-primary">
                           <Flame className="h-3.5 w-3.5 fill-primary/40 animate-flame text-primary" />
-                          {userProfile?.streak ?? 0} Day
-                          {(userProfile?.streak ?? 0) === 1 ? "" : "s"} 🔥
+                          {user?.streak ?? 0} Day
+                          {(user?.streak ?? 0) === 1 ? "" : "s"} 🔥
                         </span>
                       </div>
                     </div>
@@ -253,7 +246,7 @@ export function Navbar() {
 
                       <Link
                         to="/day/$day"
-                        params={{ day: String(userProfile?.currentDay ?? 1) }}
+                        params={{ day: String(user?.currentDay ?? 1) }}
                         onClick={() => setUserMenuOpen(false)}
                         className="group neo-button flex items-center gap-3 rounded-xl border border-border/80 bg-surface/80 px-3.5 py-2.5 text-xs font-extrabold text-foreground transition-all duration-200 hover:border-warning/50 hover:bg-warning/20 hover:text-foreground hover:translate-x-1"
                       >
@@ -261,7 +254,7 @@ export function Navbar() {
                           <Sparkles className="h-4 w-4 text-warning" />
                         </div>
                         <span className="flex-1">
-                          Today's Task (Day {userProfile?.currentDay ?? 1})
+                          Today's Task (Day {user?.currentDay ?? 1})
                         </span>
                         <span className="rounded bg-warning/25 px-1.5 py-0.5 text-[9px] font-extrabold text-warning shadow-sm">
                           NEW
@@ -353,15 +346,24 @@ export function Navbar() {
           </ul>
 
           <div className="mt-3 border-t border-border pt-3">
-            {isLoggedIn && userProfile ? (
+            {isAuthenticated && user ? (
               <div className="space-y-2">
                 <div className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary/10 p-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground">
-                    {getInitials(userProfile.name)}
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground overflow-hidden">
+                    {user.avatarUrl ? (
+                      <img src={user.avatarUrl} alt={user.name} className="h-full w-full object-cover" />
+                    ) : (
+                      getInitials(user.name)
+                    )}
                   </div>
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-foreground">{userProfile.name}</p>
-                    <p className="truncate text-xs text-muted-foreground">{userProfile.email}</p>
+                    <p className="truncate text-sm font-bold text-foreground">{user.name}</p>
+                    <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+                    {user.provider && user.provider !== "email" && (
+                      <span className="text-[10px] text-primary font-semibold flex items-center gap-1 mt-0.5">
+                        <ShieldCheck className="h-3 w-3" /> Connected with {user.provider === "github" ? "GitHub" : "Google"}
+                      </span>
+                    )}
                   </div>
                 </div>
 

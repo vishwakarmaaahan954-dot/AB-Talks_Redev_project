@@ -16,6 +16,7 @@ import { RetroTV404 } from "../components/retro-tv-404";
 import { useNetworkStatus } from "../hooks/use-network-status";
 import { TopProgressBar } from "../components/top-progress-bar";
 import { SpringoAI } from "../components/springo-ai";
+import { AuthProvider } from "../lib/auth-context";
 
 function NotFoundComponent() {
   return (
@@ -109,21 +110,23 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <TopProgressBar />
-        {/* Network offline screen fallback */}
-        {!isOnline ? (
-          <RetroTV404
-            isOffline
-            title="Network Connection Lost"
-            subtitle="You are currently offline. Please check your internet connection."
-            onRetry={() => window.location.reload()}
-          />
-        ) : (
-          <>
-            <Outlet />
-            <SpringoAI />
-          </>
-        )}
+        <AuthProvider>
+          <TopProgressBar />
+          {/* Network offline screen fallback */}
+          {!isOnline ? (
+            <RetroTV404
+              isOffline
+              title="Network Connection Lost"
+              subtitle="You are currently offline. Please check your internet connection."
+              onRetry={() => window.location.reload()}
+            />
+          ) : (
+            <>
+              <Outlet />
+              <SpringoAI />
+            </>
+          )}
+        </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Flame, Sparkles } from "lucide-react";
+import { ArrowRight, Flame, Sparkles, Github, ShieldCheck } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import { AmbientBackdrop } from "@/components/ambient-backdrop";
 import { Footer } from "@/components/footer";
+import { useAuth } from "@/hooks/use-auth";
 import {
   AchievementStrip,
   ChallengeProgress,
@@ -53,8 +54,8 @@ const stateConfig: Record<
 };
 
 function Dashboard() {
+  const { user, updateUser } = useAuth();
   const [state, setState] = useState<DashboardStateId>("first-day");
-  const [userName, setUserName] = useState<string>(student.firstName);
   const [userStreak, setUserStreak] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -66,30 +67,13 @@ function Dashboard() {
   }, []);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("abtalks_user");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed?.name) {
-          setUserName(parsed.name.split(" ")[0]);
-        }
-        // Always overwrite legacy 12 currentDay with Day 1
-        if (parsed?.currentDay === 12 || !parsed?.currentDay) {
-          parsed.currentDay = 1;
-          parsed.isFirstTime = true;
-          localStorage.setItem("abtalks_user", JSON.stringify(parsed));
-        }
-        setState("first-day");
-        if (typeof parsed?.streak === "number") {
-          setUserStreak(parsed.streak);
-        }
-      } else {
-        setState("first-day");
-      }
-    } catch {
-      setState("first-day");
+    if (user?.streak !== undefined) {
+      setUserStreak(user.streak);
     }
-  }, []);
+    setState("first-day");
+  }, [user]);
+
+  const activeUserName = user?.name ? user.name.split(" ")[0] : student.firstName;
 
   const cfg = {
     ...stateConfig[state],
@@ -99,16 +83,7 @@ function Dashboard() {
   const handleProofUpdate = ({ github, linkedin }: { github: boolean; linkedin: boolean }) => {
     if (github && linkedin && cfg.day === 1) {
       setUserStreak(1);
-      try {
-        const stored = localStorage.getItem("abtalks_user");
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          parsed.streak = 1;
-          localStorage.setItem("abtalks_user", JSON.stringify(parsed));
-        }
-      } catch (err) {
-        console.error("Failed to update user streak in localStorage:", err);
-      }
+      updateUser({ streak: 1 });
     }
   };
 
@@ -136,8 +111,21 @@ function Dashboard() {
               Day {cfg.day} of {student.totalDays}
             </p>
             <h1 className="mt-2 text-3xl font-bold text-balance sm:text-4xl">
-              Good evening, {userName}
+              Good evening, {activeUserName}
             </h1>
+            {user?.provider && user.provider !== "email" && (
+              <div className="mt-2.5 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                {user.provider === "github" ? (
+                  <Github className="h-3.5 w-3.5" />
+                ) : (
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                )}
+                <span>
+                  Connected with {user.provider === "github" ? "GitHub" : "Google"} OAuth
+                  {user.githubUsername ? ` (@${user.githubUsername})` : ""}
+                </span>
+              </div>
+            )}
             <p className="mt-2 text-sm text-muted-foreground">
               {cfg.streak > 0
                 ? "You're on track. One task, two proofs, day closed."

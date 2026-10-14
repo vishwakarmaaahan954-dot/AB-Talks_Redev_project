@@ -30,7 +30,11 @@ This file documents the current route structure of the application and the main 
 
 - `/login` — Login page
   - File: `src/routes/login.tsx`
-  - Purpose: Authentication entry flow
+  - Purpose: Authentication entry flow with GitHub & Google OAuth 2.0 PKCE and email credentials
+
+- `/auth/callback` — OAuth 2.0 callback route
+  - File: `src/routes/auth.callback.tsx`
+  - Purpose: Handles OAuth 2.0 authorization code and state validation from GitHub and Google
 
 - `/day/$day` — Dynamic daily challenge route
   - File: `src/routes/day.$day.tsx`
@@ -47,6 +51,7 @@ __root__
 ├── /how-it-works
 ├── /leaderboard
 ├── /login
+├── /auth/callback
 └── /day/$day
 ```
 

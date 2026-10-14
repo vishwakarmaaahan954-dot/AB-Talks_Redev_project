@@ -27,6 +27,7 @@ import { achievements, leaderboard, student, todayTask } from "@/data/abtalks";
 import type { DashboardStateId } from "@/data/abtalks";
 import { useInView, useReducedMotion } from "@/hooks/use-motion";
 import { Tilt3DCard } from "@/components/tilt-3d-card";
+import { useAuth } from "@/hooks/use-auth";
 
 /* ---------- Streak ---------- */
 
@@ -171,6 +172,7 @@ export function SubmissionStatus({
   onProofUpdate?: (proofs: { github: boolean; linkedin: boolean }) => void;
 }) {
   const storageKey = `abtalks_proof_day_${day}`;
+  const { user } = useAuth();
   const [githubUrl, setGithubUrl] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [githubSubmitted, setGithubSubmitted] = useState(github);
@@ -403,6 +405,17 @@ export function SubmissionStatus({
                 <p className="flex items-center gap-1 text-[11px] font-medium text-destructive">
                   <AlertCircle className="h-3 w-3" /> {githubError}
                 </p>
+              )}
+              {user?.githubUsername && !githubUrl && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setGithubUrl(`https://github.com/${user.githubUsername}/abtalks-60day/commit/main`)
+                  }
+                  className="flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+                >
+                  <Sparkles className="h-3 w-3" /> Use @{user.githubUsername} repository pattern
+                </button>
               )}
             </form>
           )}
