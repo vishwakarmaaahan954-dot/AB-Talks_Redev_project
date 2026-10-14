@@ -23,21 +23,22 @@ import { GlassCard } from "@/components/glass-card";
 import { ProgressBar } from "@/components/progress-ring";
 import { student, todayTask } from "@/data/abtalks";
 
-const title = "Day 1 — Build a Responsive Developer Portfolio Hero | ABTalks";
-const description =
-  "Day 1 of the ABTalks 60-day challenge: build a responsive developer portfolio hero, commit it to GitHub, and share your progress on LinkedIn.";
-
 export const Route = createFileRoute("/day/$day")({
-  head: () => ({
-    meta: [
-      { title },
-      { name: "description", content: description },
-      { property: "og:title", content: title },
-      { property: "og:description", content: description },
-      { property: "og:type", content: "article" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-  }),
+  head: ({ params }) => {
+    const dayNum = params?.day || String(todayTask.day);
+    const dayTitle = `Day ${dayNum} — ${todayTask.title} | ABTalks`;
+    const dayDesc = `Day ${dayNum} of the ABTalks 60-day challenge: build daily, commit to GitHub, and share your progress on LinkedIn.`;
+    return {
+      meta: [
+        { title: dayTitle },
+        { name: "description", content: dayDesc },
+        { property: "og:title", content: dayTitle },
+        { property: "og:description", content: dayDesc },
+        { property: "og:type", content: "article" },
+        { name: "twitter:card", content: "summary_large_image" },
+      ],
+    };
+  },
   component: DayPage,
 });
 

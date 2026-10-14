@@ -4,12 +4,14 @@ export type ThemeMode = "dark" | "light";
 
 type ThemeContextType = {
   theme: ThemeMode;
+  resolvedTheme: ThemeMode;
   setTheme: (theme: ThemeMode) => void;
   toggle: () => void;
 };
 
 const ThemeContext = createContext<ThemeContextType>({
   theme: "dark",
+  resolvedTheme: "dark",
   setTheme: () => {},
   toggle: () => {},
 });
@@ -64,7 +66,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, toggle }}>{children}</ThemeContext.Provider>
+    <ThemeContext.Provider value={{ theme, resolvedTheme: theme, setTheme, toggle }}>
+      {children}
+    </ThemeContext.Provider>
   );
 }
 

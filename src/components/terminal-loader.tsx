@@ -7,7 +7,7 @@ export function TerminalLoader({
   message?: string;
   fullScreen?: boolean;
 }) {
-  const { resolvedTheme } = useTheme();
+  const { theme } = useTheme();
 
   const content = (
     <div className="terminal-loader shadow-2xl">
@@ -29,7 +29,7 @@ export function TerminalLoader({
         aria-live="polite"
         aria-label="Loading page"
         className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center p-4 transition-opacity duration-300 ${
-          resolvedTheme === "light"
+          theme === "light"
             ? "bg-background/90 backdrop-blur-md"
             : "bg-black/90 backdrop-blur-md"
         }`}

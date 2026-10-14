@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ChevronDown, ShieldCheck } from "lucide-react";
 import { AnimatedCounter } from "./animated-counter";
 import { WorkspaceVisual } from "./workspace-visual";
+import { Tilt3DCard } from "./tilt-3d-card";
 import { heroPhrases, platformStats } from "@/data/abtalks";
 import { useIsDesktop, useReducedMotion, useScrollProgress } from "@/hooks/use-motion";
 
@@ -50,8 +51,6 @@ function RotatingPhrase() {
     </span>
   );
 }
-
-import { Tilt3DCard } from "./tilt-3d-card";
 
 export function Hero() {
   const { ref, progress } = useScrollProgress<HTMLDivElement>();

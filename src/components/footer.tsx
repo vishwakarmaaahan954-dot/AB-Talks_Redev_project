@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Github, Linkedin, Instagram, Terminal } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
+import { todayTask } from "@/data/abtalks";
 
 export function Footer() {
   return (
@@ -88,7 +89,7 @@ export function Footer() {
               <li>
                 <Link
                   to="/day/$day"
-                  params={{ day: "12" }}
+                  params={{ day: String(todayTask.day) }}
                   className="text-muted-foreground hover:text-foreground"
                 >
                   Today's task

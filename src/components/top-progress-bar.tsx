@@ -19,14 +19,12 @@ export function TopProgressBar() {
         clearTimeout(t2);
       };
     } else {
-      if (progress > 0) {
-        setProgress(100);
-        const timer = setTimeout(() => {
-          setVisible(false);
-          setProgress(0);
-        }, 300);
-        return () => clearTimeout(timer);
-      }
+      setProgress((prev) => (prev > 0 ? 100 : prev));
+      const timer = setTimeout(() => {
+        setVisible(false);
+        setProgress(0);
+      }, 300);
+      return () => clearTimeout(timer);
     }
   }, [isLoading]);
 

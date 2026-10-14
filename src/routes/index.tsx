@@ -71,7 +71,7 @@ const featureCards = [
     desc: "How hiring managers use ABTalks to evaluate proof of execution over traditional resumes.",
     badge: "Hiring Partners",
   },
-];
+] as const;
 
 function Landing() {
   const top3 = leaderboard.slice(0, 3);

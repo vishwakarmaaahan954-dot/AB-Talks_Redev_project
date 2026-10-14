@@ -546,7 +546,7 @@ export function CTASection() {
           <div className="mt-5 flex justify-center">
             <Link
               to="/day/$day"
-              params={{ day: "12" }}
+              params={{ day: String(todayTask.day) }}
               className="group inline-flex min-h-12 items-center gap-2 rounded-full border border-border px-6 text-sm font-semibold transition-colors hover:border-primary/50 hover:text-primary"
             >
               START YOUR JOURNEY

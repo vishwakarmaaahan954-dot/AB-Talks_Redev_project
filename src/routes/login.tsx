@@ -224,9 +224,19 @@ export function LoginPage() {
                   Password
                 </label>
                 {mode === "login" && (
-                  <a href="#" className="text-[11px] font-medium text-primary hover:underline">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (email.trim()) {
+                        setAuthError(`Password reset email sent to ${email.trim()}`);
+                      } else {
+                        setAuthError("Enter your email address above to reset password.");
+                      }
+                    }}
+                    className="text-[11px] font-medium text-primary hover:underline focus:outline-none"
+                  >
                     Forgot password?
-                  </a>
+                  </button>
                 )}
               </div>
               <div className="relative">

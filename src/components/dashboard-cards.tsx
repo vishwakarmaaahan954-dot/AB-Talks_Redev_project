@@ -718,8 +718,8 @@ export function LeaderboardPreview({ streak = 0 }: { streak?: number }) {
         ))}
       </ul>
 
-      <a
-        href="/#leaderboard"
+      <Link
+        to="/leaderboard"
         className="group mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-border text-sm font-semibold transition-colors hover:border-primary/50 hover:text-primary"
       >
         VIEW LEADERBOARD
@@ -727,7 +727,7 @@ export function LeaderboardPreview({ streak = 0 }: { streak?: number }) {
           className="h-4 w-4 transition-transform group-hover:translate-x-1"
           aria-hidden="true"
         />
-      </a>
+      </Link>
     </GlassCard>
   );
 }

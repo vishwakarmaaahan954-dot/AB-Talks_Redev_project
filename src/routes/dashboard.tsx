@@ -70,8 +70,7 @@ function Dashboard() {
     if (user?.streak !== undefined) {
       setUserStreak(user.streak);
     }
-    setState("first-day");
-  }, [user]);
+  }, [user?.streak]);
 
   const activeUserName = user?.name ? user.name.split(" ")[0] : student.firstName;
 

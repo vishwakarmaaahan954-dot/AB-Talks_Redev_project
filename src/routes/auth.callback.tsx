@@ -70,7 +70,7 @@ export function AuthCallbackPage() {
           ]);
           setStatus("success");
           setTimeout(() => {
-            navigate({ to: result.returnTo || "/dashboard" });
+            navigate({ to: (result.returnTo as any) || "/dashboard" });
           }, 900);
         } else {
           setStatus("error");
